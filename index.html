@@ -430,7 +430,7 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const checkinCollection = db.collection('WebappLab');
+        const checkinCollection = db.collection('WebAppLabRecord');
 
         let localCheckinRecords = [];
         let editingDocId = null;
@@ -652,5 +652,6 @@
 
 </body>
 </html>
+
 
 
