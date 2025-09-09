@@ -419,18 +419,19 @@
         // 1. FIREBASE CONFIGURATION (การตั้งค่า FIREBASE)
         // =====================================================================
         const firebaseConfig = {
-            apiKey: "AIzaSyAL_C2PN82y0k1iqc3rzOrqYdxynN7qd3A",
-            authDomain: "checkin-164e0.firebaseapp.com",
-            projectId: "checkin-164e0",
-            storageBucket: "checkin-164e0.appspot.com",
-            messagingSenderId: "83157183999",
-            appId: "1:83157183999:web:725c993e0b9e0f6100cbca"
+            apiKey: "AIzaSyDOqs_fEFGZVBovxzR-mt7PQvHXmLSh18M",
+            authDomain: "webapplab-2aafa.firebaseapp.com",
+            projectId: "webapplab-2aafa",
+            storageBucket: "webapplab-2aafa.firebasestorage.app",
+            messagingSenderId: "538393639642",
+            appId: "1:538393639642:web:685a857357ffc6a5b003e3",
+            measurementId: "G-8DJ7JJ83D1"
         };
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const checkinCollection = db.collection('checkinRecords');
+        const checkinCollection = db.collection('WebappLab');
 
         let localCheckinRecords = [];
         let editingDocId = null;
@@ -652,3 +653,4 @@
 
 </body>
 </html>
+
