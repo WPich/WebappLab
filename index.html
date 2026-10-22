@@ -287,21 +287,6 @@
                     <label for="employeeName">ชื่อพนักงาน:</label>
                     <select id="employeeName" required>
                         <option value="">เลือกชื่อพนักงาน</option>
-                        <option value="นายพงษ์พัฒน์ ศรีกัลยาณวัจน์ โทร. 087-795-4158">นายพงษ์พัฒน์ ศรีกัลยาณวัจน์ โทร. 087-795-4158</option>
-                        <option value="นายพิชญ์ วรัญญูผลิน โทร. 081-355-7756">นายพิชญ์ วรัญญูผลิน โทร. 081-355-7756</option>
-                        <option value="นายธนะรัชต์ มูลวงษ์ โทร. 065-096-9499">นายธนะรัชต์ มูลวงษ์ โทร. 065-096-9499</option>
-                        <option value="นางสาวกัญญาวีร์ ชินกลาง โทร. 094-179-6378">นางสาวกัญญาวีร์ ชินกลาง โทร. 094-179-6378</option>
-                        <option value="นางสาวอัญชลี บุญสุข โทร. 088-956-0167">นางสาวอัญชลี บุญสุข โทร. 088-956-0167</option>
-                        <option value="นายอนุสรณ์ ขมิ้นเครือ โทร. 086-011-5308">นายอนุสรณ์ ขมิ้นเครือ โทร. 086-011-5308</option>
-                        <option value="นายนาวี เศวตภาณุ โทร. 083-028-0474">นายนาวี เศวตภาณุ โทร. 083-028-0474</option>
-                        <option value="นายชัยมณ ถนอมมิตร โทร. 088-202-9151">นายชัยมณ ถนอมมิตร โทร. 088-202-9151</option>
-                        <option value="เสริมศักดิ์ บุญมั่งมี โทร. 082-559-9079">เสริมศักดิ์ บุญมั่งมี โทร. 082-559-9079</option>
-                        <option value="สมศักดิ์ คำแก้ว โทร. 094-446-7562">สมศักดิ์ คำแก้ว โทร. 094-446-7562</option>
-                        <option value="ศุภณัฐ เกศวารี โทร. 061-303-8503">ศุภณัฐ เกศวารี โทร. 061-303-8503</option>
-                        <option value="Outsource 1">Outsource 1</option>
-                        <option value="Outsource 2">Outsource 2</option>
-                        <option value="Outsource 3">Outsource 3</option>
-                        <option value="Outsource 4">Outsource 4</option>
                     </select>
                 </div>
 
@@ -396,6 +381,7 @@
                     </div>
                 </div>
             </div>
+            <div style="overflow-x: auto;">
             <table class="records-table">
                 <thead>
                     <tr>
@@ -410,6 +396,7 @@
                 <tbody id="recordsTableBody">
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 
@@ -426,49 +413,141 @@
             projectId: "webapplab-2aafa",
             storageBucket: "webapplab-2aafa.firebasestorage.app",
             messagingSenderId: "538393639642",
-            appId: "1:538393639642:web:685a857357ffc6a5b003e3"            
+            appId: "1:538393639642:web:685a857357ffc6a5b003e3"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const checkinCollection = db.collection('WebAppLabRecord');
+
+        // =====================================================================
+        // 2. รายชื่อพนักงาน (แก้ไขรายชื่อได้ที่นี่ที่เดียว)
+        //    ไม่ใส่เบอร์โทร/อีเมล เพราะหน้าเว็บนี้เปิดเป็น public
+        // =====================================================================
+        const EMPLOYEES = [
+            { group: 'Management', first: 'ไตรรงค์', last: 'ธนบุญสมบัติ', nick: 'หนุ่ม', position: 'Service Desk Manager (SDM)' },
+            { group: 'Management', first: 'สุโรจน์', last: 'เปี่ยมจิตต์', nick: 'บาส', position: 'Assistant Manager' },
+            { group: 'Management', first: 'เสริมศักดิ์', last: 'บุญมั่งมี', nick: 'แจ็ค', position: 'Assistant Manager (PM)' },
+            { group: 'Management', first: 'สมัคร', last: 'สามชัย', nick: 'ปอนด์', position: 'Project Management Executive' },
+
+            { group: 'System / Technical', first: 'สมศักดิ์', last: 'คำแก้ว', nick: 'หนู', position: 'Senior System Engineer' },
+            { group: 'System / Technical', first: 'พิชญ์', last: 'วรัญญูผลิน', nick: 'ซัน', position: 'Senior System Engineer' },
+            { group: 'System / Technical', first: 'นาวี', last: 'เศวตภาณุ', nick: 'ไมค์', position: 'Senior Technical Specialist' },
+            { group: 'System / Technical', first: 'อนุสรณ์', last: 'ขมิ้นเครือ', nick: 'บิ๊ก', position: 'Technical Specialist' },
+            { group: 'System / Technical', first: 'ภัทรวีร์', last: 'ภัทรเกียรติธำรง', nick: 'ชล', position: 'System Engineer' },
+            { group: 'System / Technical', first: 'พงศกร', last: 'อภิบาลสมุทร', nick: 'ไก่', position: 'System Engineer' },
+
+            { group: 'Network', first: 'จารุเดช', last: 'ทับสุข', nick: 'ช็อป', position: 'Network Engineer' },
+            { group: 'Network', first: 'ชัชวาล', last: 'เล็งไธสง', nick: 'เฟิร์ส', position: 'Network Engineer' },
+            { group: 'Network', first: 'มัทนา', last: 'แก้วน้ำลักษณ์', nick: 'มัท', position: 'Network Engineer' },
+
+            { group: 'IT Support / Help Desk', first: 'ธนะรัชต์', last: 'มูลวงษ์', nick: 'เต๋า', position: 'IT Support' },
+            { group: 'IT Support / Help Desk', first: 'ศุภณัฐ', last: 'เกศวารี', nick: 'เจมส์', position: 'IT Support' },
+            { group: 'IT Support / Help Desk', first: 'กัญญาวีร์', last: 'ชินกลาง', nick: 'ฝน', position: 'IT Help Desk' },
+            { group: 'IT Support / Help Desk', first: 'ภัทรภร', last: 'พูลสวัสดิ์', nick: 'ปุ้น', position: 'IT Help Desk' },
+            { group: 'IT Support / Help Desk', first: 'อัญชลี', last: 'บุญสุข', nick: 'ปุยฝ้าย', position: 'Admin IT Help Desk' },
+
+            { group: 'Outsource', label: 'Outsource 1' },
+            { group: 'Outsource', label: 'Outsource 2' },
+            { group: 'Outsource', label: 'Outsource 3' },
+            { group: 'Outsource', label: 'Outsource 4' }
+        ];
+        EMPLOYEES.forEach(e => {
+            if (!e.label) e.label = `${e.first} ${e.last} (${e.nick})`;
+        });
+
+        // ข้อมูลเก่าเก็บชื่อเป็น "นายพิชญ์ วรัญญูผลิน โทร. 081-..." -> แปลงให้ตรงกับรายชื่อใหม่
+        // เพื่อให้สรุปรวมคนเดียวกันไว้ด้วยกัน (ไม่แก้ข้อมูลใน Firestore)
+        const TITLE_PREFIX = /^(นางสาว|นาง|นาย|น\.ส\.|Mr\.?|Ms\.?|Mrs\.?)\s*/;
+        function normalizeName(raw) {
+            if (!raw) return '';
+            const cleaned = String(raw).replace(/\s*โทร\..*$/, '').replace(TITLE_PREFIX, '').trim();
+            const hit = EMPLOYEES.find(e => e.label === raw || e.label === cleaned ||
+                (e.first && cleaned === `${e.first} ${e.last}`));
+            return hit ? hit.label : cleaned;
+        }
+
+        function populateEmployeeSelect() {
+            const select = document.getElementById('employeeName');
+            const groups = {};
+            EMPLOYEES.forEach(e => {
+                if (!groups[e.group]) {
+                    groups[e.group] = document.createElement('optgroup');
+                    groups[e.group].label = e.group;
+                    select.appendChild(groups[e.group]);
+                }
+                const opt = document.createElement('option');
+                opt.value = e.label;
+                opt.textContent = e.position ? `${e.label} – ${e.position}` : e.label;
+                groups[e.group].appendChild(opt);
+            });
+        }
 
         let localCheckinRecords = [];
         let editingDocId = null;
 
         // =====================================================================
-        // 2. DATA HANDLING (การจัดการข้อมูล)
+        // 3. HELPERS
         // =====================================================================
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
 
+        // วันที่เก็บเป็นข้อความ "YYYY-MM-DD" -> แสดงผลโดยไม่ให้ timezone ทำให้วันเลื่อน
+        function formatThaiDate(ymd, opts = { year: 'numeric', month: 'long', day: 'numeric' }) {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd || '')) return escapeHtml(ymd);
+            const [y, m, d] = ymd.split('-').map(Number);
+            return new Date(y, m - 1, d).toLocaleDateString('th-TH', opts);
+        }
+
+        function toYmd(date) {
+            const p = n => String(n).padStart(2, '0');
+            return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}`;
+        }
+
+        function setToday(inputId) {
+            document.getElementById(inputId).value = toYmd(new Date());
+        }
+
+        // =====================================================================
+        // 4. DATA HANDLING (การจัดการข้อมูล)
+        // =====================================================================
         window.addEventListener('load', function() {
-            document.getElementById('checkinDate').valueAsDate = new Date();
-            
+            populateEmployeeSelect();
+            setToday('checkinDate');
+
             checkinCollection.orderBy('checkinDate', 'desc').onSnapshot(snapshot => {
                 localCheckinRecords = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 updateRecordsTable();
-                console.log("ข้อมูลอัพเดทจาก Firestore แล้ว!");
             }, error => {
                 console.error("เกิดข้อผิดพลาดในการดึงข้อมูล: ", error);
+                alert("ดึงข้อมูลไม่สำเร็จ: " + error.message);
             });
         });
-        
+
         document.getElementById('checkinForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+            const submitBtn = document.querySelector('.btn-primary');
+
             const employeeName = document.getElementById('employeeName').value;
             const checkinDate = document.getElementById('checkinDate').value;
             const manday = document.getElementById('manday').checked;
             const traveling = document.getElementById('traveling').checked;
-            
-            const record = {
-                employeeName,
-                checkinDate,
-                manday,
-                traveling,
-                timestamp: new Date().toISOString()
-            };
 
+            if (!manday && !traveling) {
+                return alert('กรุณาเลือกอย่างน้อย 1 ประเภท (Manday หรือ Traveling)');
+            }
+
+            // กันบันทึกซ้ำ: คนเดียวกัน วันเดียวกัน
+            const duplicate = localCheckinRecords.find(r =>
+                r.id !== editingDocId && r.checkinDate === checkinDate && normalizeName(r.employeeName) === employeeName);
+            if (duplicate && !confirm(`${employeeName} มีการ Check In วันที่ ${formatThaiDate(checkinDate)} แล้ว\nต้องการบันทึกซ้ำหรือไม่?`)) {
+                return;
+            }
+
+            const record = { employeeName, checkinDate, manday, traveling, timestamp: new Date().toISOString() };
+
+            submitBtn.disabled = true;
             try {
                 if (editingDocId) {
                     await checkinCollection.doc(editingDocId).update(record);
@@ -481,90 +560,99 @@
             } catch (error) {
                 console.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล: ", error);
                 alert("เกิดข้อผิดพลาด: " + error.message);
+            } finally {
+                submitBtn.disabled = false;
             }
         });
 
         function clearForm() {
             document.getElementById('checkinForm').reset();
-            document.getElementById('checkinDate').valueAsDate = new Date();
+            setToday('checkinDate');
             editingDocId = null;
             document.querySelector('.btn-primary').textContent = 'บันทึกข้อมูล';
         }
 
         function updateRecordsTable() {
             const tbody = document.getElementById('recordsTableBody');
-            tbody.innerHTML = '';
-
-            localCheckinRecords.forEach(record => {
-                const row = tbody.insertRow();
-                const checkinDate = new Date(record.checkinDate);
-                checkinDate.setMinutes(checkinDate.getMinutes() + checkinDate.getTimezoneOffset() + 420);
-
-                row.innerHTML = `
-                    <td>${record.employeeName}</td>
-                    <td>${checkinDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</td>
+            if (localCheckinRecords.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#666;">ยังไม่มีข้อมูล</td></tr>';
+                return;
+            }
+            tbody.innerHTML = localCheckinRecords.map(record => `
+                <tr>
+                    <td>${escapeHtml(normalizeName(record.employeeName))}</td>
+                    <td>${formatThaiDate(record.checkinDate)}</td>
                     <td>${record.manday ? '✅' : '❌'}</td>
                     <td>${record.traveling ? '✅' : '❌'}</td>
-                    <td>${new Date(record.timestamp).toLocaleString('th-TH')}</td>
+                    <td>${record.timestamp ? escapeHtml(new Date(record.timestamp).toLocaleString('th-TH')) : '-'}</td>
                     <td>
-                        <button class="edit-btn" onclick="editRecord('${record.id}')">แก้ไข</button>
-                        <button class="delete-btn" onclick="deleteRecord('${record.id}')">ลบ</button>
+                        <button class="edit-btn" data-id="${escapeHtml(record.id)}" data-action="edit">แก้ไข</button>
+                        <button class="delete-btn" data-id="${escapeHtml(record.id)}" data-action="delete">ลบ</button>
                     </td>
-                `;
-            });
+                </tr>`).join('');
         }
 
-        async function editRecord(docId) {
-            try {
-                const docSnap = await checkinCollection.doc(docId).get();
-                if (!docSnap.exists) {
-                    alert('ไม่พบข้อมูลที่ต้องการแก้ไข!');
-                    return;
-                }
-                const record = docSnap.data();
-                document.getElementById('employeeName').value = record.employeeName;
-                document.getElementById('checkinDate').value = record.checkinDate;
-                document.getElementById('manday').checked = record.manday;
-                document.getElementById('traveling').checked = record.traveling;
-                
-                editingDocId = docId;
-                document.querySelector('.btn-primary').textContent = 'อัพเดทข้อมูล';
-                
-                document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
-            } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการดึงข้อมูลเพื่อแก้ไข: ", error);
+        document.getElementById('recordsTableBody').addEventListener('click', e => {
+            const btn = e.target.closest('button[data-action]');
+            if (!btn) return;
+            if (btn.dataset.action === 'edit') editRecord(btn.dataset.id);
+            if (btn.dataset.action === 'delete') deleteRecord(btn.dataset.id);
+        });
+
+        function editRecord(docId) {
+            const record = localCheckinRecords.find(r => r.id === docId);
+            if (!record) return alert('ไม่พบข้อมูลที่ต้องการแก้ไข!');
+
+            const select = document.getElementById('employeeName');
+            const name = normalizeName(record.employeeName);
+            // ถ้าเป็นชื่อเก่าที่ไม่อยู่ในรายชื่อแล้ว ให้เพิ่มเป็นตัวเลือกชั่วคราว
+            if (![...select.options].some(o => o.value === name)) {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = `${name} (รายชื่อเดิม)`;
+                select.appendChild(opt);
             }
+            select.value = name;
+            document.getElementById('checkinDate').value = record.checkinDate;
+            document.getElementById('manday').checked = !!record.manday;
+            document.getElementById('traveling').checked = !!record.traveling;
+
+            editingDocId = docId;
+            document.querySelector('.btn-primary').textContent = 'อัพเดทข้อมูล';
+            document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
         }
 
         async function deleteRecord(docId) {
-            if (confirm('คุณต้องการลบข้อมูลนี้หรือไม่?')) {
-                try {
-                    await checkinCollection.doc(docId).delete();
-                    alert('ลบข้อมูลเรียบร้อยแล้ว!');
-                } catch (error) {
-                    console.error("เกิดข้อผิดพลาดในการลบข้อมูล: ", error);
-                }
+            const record = localCheckinRecords.find(r => r.id === docId);
+            const label = record ? `${normalizeName(record.employeeName)} วันที่ ${formatThaiDate(record.checkinDate)}` : 'รายการนี้';
+            if (!confirm(`ต้องการลบ ${label} หรือไม่?`)) return;
+            try {
+                await checkinCollection.doc(docId).delete();
+            } catch (error) {
+                console.error("เกิดข้อผิดพลาดในการลบข้อมูล: ", error);
+                alert("ลบไม่สำเร็จ: " + error.message);
             }
         }
 
         // =====================================================================
-        // 3. UTILITY & SUMMARY FUNCTIONS
+        // 5. SUMMARY & EXPORT
         // =====================================================================
-
         function setCurrentDateTime() {
-            document.getElementById('checkinDate').valueAsDate = new Date();
+            setToday('checkinDate');
         }
 
         function showSummary() {
             const summarySection = document.getElementById('summarySection');
             const selectedDate = document.getElementById('checkinDate').value;
             if (!selectedDate) return alert('กรุณาเลือกวันที่');
-            
+
             const dateRecords = localCheckinRecords.filter(r => r.checkinDate === selectedDate);
+            document.querySelector('#summarySection .summary-title').textContent = `สรุปข้อมูลวันที่ ${formatThaiDate(selectedDate)}`;
             document.getElementById('totalCheckins').textContent = dateRecords.length;
             document.getElementById('totalMandays').textContent = dateRecords.filter(r => r.manday).length;
             document.getElementById('totalTraveling').textContent = dateRecords.filter(r => r.traveling).length;
 
+            document.getElementById('rangeSummarySection').style.display = 'none';
             summarySection.style.display = 'block';
             summarySection.scrollIntoView({ behavior: 'smooth' });
         }
@@ -573,82 +661,101 @@
             const rangeSummarySection = document.getElementById('rangeSummarySection');
             document.getElementById('summarySection').style.display = 'none';
             rangeSummarySection.style.display = 'block';
-            
+
             const today = new Date();
             const weekAgo = new Date(today);
             weekAgo.setDate(today.getDate() - 7);
-            
-            document.getElementById('startDate').valueAsDate = weekAgo;
-            document.getElementById('endDate').valueAsDate = today;
-            
+            document.getElementById('startDate').value = toYmd(weekAgo);
+            document.getElementById('endDate').value = toYmd(today);
+
             calculateRangeSummary();
             rangeSummarySection.scrollIntoView({ behavior: 'smooth' });
         }
 
-        function calculateRangeSummary() {
+        function getRangeRecords() {
             const startDate = document.getElementById('startDate').value;
             const endDate = document.getElementById('endDate').value;
-            if (!startDate || !endDate || new Date(startDate) > new Date(endDate)) {
-                return alert('กรุณาเลือกช่วงวันที่ให้ถูกต้อง');
-            }
-            
-            const rangeRecords = localCheckinRecords.filter(r => {
-                const recordDate = new Date(r.checkinDate);
-                return recordDate >= new Date(startDate) && recordDate <= new Date(endDate);
-            });
-            
-            document.getElementById('rangeCheckins').textContent = rangeRecords.length;
-            document.getElementById('rangeMandays').textContent = rangeRecords.filter(r => r.manday).length;
-            document.getElementById('rangeTraveling').textContent = rangeRecords.filter(r => r.traveling).length;
-            const daysDiff = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1;
+            if (!startDate || !endDate || startDate > endDate) return null;
+            // เทียบเป็นข้อความ YYYY-MM-DD ตรง ๆ ไม่มีปัญหา timezone
+            return { startDate, endDate, records: localCheckinRecords.filter(r => r.checkinDate >= startDate && r.checkinDate <= endDate) };
+        }
+
+        function calculateRangeSummary() {
+            const range = getRangeRecords();
+            if (!range) return alert('กรุณาเลือกช่วงวันที่ให้ถูกต้อง');
+            const { startDate, endDate, records } = range;
+
+            document.getElementById('rangeCheckins').textContent = records.length;
+            document.getElementById('rangeMandays').textContent = records.filter(r => r.manday).length;
+            document.getElementById('rangeTraveling').textContent = records.filter(r => r.traveling).length;
+            const [y1, m1, d1] = startDate.split('-').map(Number);
+            const [y2, m2, d2] = endDate.split('-').map(Number);
+            const daysDiff = Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000) + 1;
             document.getElementById('rangeDays').textContent = daysDiff;
-            
-            createEmployeeBreakdown(rangeRecords);
+
+            createEmployeeBreakdown(records);
         }
 
         function createEmployeeBreakdown(rangeRecords) {
             const employeeBreakdownContent = document.getElementById('employeeBreakdownContent');
             const employeeStats = {};
             rangeRecords.forEach(record => {
-                if (!employeeStats[record.employeeName]) {
-                    employeeStats[record.employeeName] = { checkins: 0, mandays: 0, traveling: 0 };
-                }
-                employeeStats[record.employeeName].checkins++;
-                if (record.manday) employeeStats[record.employeeName].mandays++;
-                if (record.traveling) employeeStats[record.employeeName].traveling++;
+                const name = normalizeName(record.employeeName);
+                if (!employeeStats[name]) employeeStats[name] = { checkins: 0, mandays: 0, traveling: 0 };
+                employeeStats[name].checkins++;
+                if (record.manday) employeeStats[name].mandays++;
+                if (record.traveling) employeeStats[name].traveling++;
             });
-            
-            let html = `<div class="employee-card" style="background: linear-gradient(45deg, #9C27B0, #673AB7); color: white;"><div class="employee-name">ชื่อพนักงาน</div><div style="text-align: center; font-weight: bold;">Check In</div><div style="text-align: center; font-weight: bold;">Manday</div><div style="text-align: center; font-weight: bold;">Traveling</div></div>`;
+
             if (Object.keys(employeeStats).length === 0) {
-                html = '<p style="text-align: center; color: #666; padding: 20px;">ไม่มีข้อมูลในช่วงวันที่ที่เลือก</p>';
-            } else {
-                 Object.entries(employeeStats).sort(([a], [b]) => a.localeCompare(b, 'th')).forEach(([name, stats]) => {
-                    html += `<div class="employee-card"><div class="employee-name">${name}</div><div class="employee-stat stat-checkin">${stats.checkins}</div><div class="employee-stat stat-manday">${stats.mandays}</div><div class="employee-stat stat-travel">${stats.traveling}</div></div>`;
-                });
+                employeeBreakdownContent.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">ไม่มีข้อมูลในช่วงวันที่ที่เลือก</p>';
+                return;
             }
+
+            // เรียงตามลำดับในรายชื่อ ชื่อที่ไม่อยู่ในรายชื่อไว้ท้ายสุด
+            const order = name => { const i = EMPLOYEES.findIndex(e => e.label === name); return i < 0 ? 999 : i; };
+            let html = `<div class="employee-card" style="background: linear-gradient(45deg, #9C27B0, #673AB7); color: white;"><div class="employee-name" style="color: white;">ชื่อพนักงาน</div><div style="text-align: center; font-weight: bold;">Check In</div><div style="text-align: center; font-weight: bold;">Manday</div><div style="text-align: center; font-weight: bold;">Traveling</div></div>`;
+            Object.entries(employeeStats)
+                .sort(([a], [b]) => order(a) - order(b) || a.localeCompare(b, 'th'))
+                .forEach(([name, stats]) => {
+                    html += `<div class="employee-card"><div class="employee-name">${escapeHtml(name)}</div><div class="employee-stat stat-checkin">${stats.checkins}</div><div class="employee-stat stat-manday">${stats.mandays}</div><div class="employee-stat stat-travel">${stats.traveling}</div></div>`;
+                });
             employeeBreakdownContent.innerHTML = html;
         }
 
+        function csvCell(v) {
+            return `"${String(v ?? '').replace(/"/g, '""')}"`;
+        }
+
+        // ถ้าเปิดส่วน "สรุปช่วงวันที่" อยู่ จะ export เฉพาะช่วงวันที่นั้น ไม่งั้น export ทั้งหมด
         function exportData() {
-            if (localCheckinRecords.length === 0) return alert('ไม่มีข้อมูลสำหรับ Export');
-            
+            let records = localCheckinRecords;
+            let suffix = 'all';
+            if (document.getElementById('rangeSummarySection').style.display === 'block') {
+                const range = getRangeRecords();
+                if (range) { records = range.records; suffix = `${range.startDate}_to_${range.endDate}`; }
+            }
+            if (records.length === 0) return alert('ไม่มีข้อมูลสำหรับ Export');
+
             let csvContent = "ชื่อพนักงาน,วันที่,Manday,Traveling,เวลาบันทึก\n";
-            localCheckinRecords.forEach(record => {
-                const checkinDate = new Date(record.checkinDate);
-                checkinDate.setMinutes(checkinDate.getMinutes() + checkinDate.getTimezoneOffset() + 420);
-                const row = [`"${record.employeeName}"`, `"${checkinDate.toLocaleDateString('th-TH')}"`, record.manday ? 'ใช่' : 'ไม่ใช่', record.traveling ? 'ใช่' : 'ไม่ใช่', `"${new Date(record.timestamp).toLocaleString('th-TH')}"`].join(',');
-                csvContent += row + "\n";
+            [...records].sort((a, b) => (a.checkinDate || '').localeCompare(b.checkinDate || '')).forEach(record => {
+                csvContent += [
+                    csvCell(normalizeName(record.employeeName)),
+                    csvCell(formatThaiDate(record.checkinDate, { year: 'numeric', month: '2-digit', day: '2-digit' })),
+                    record.manday ? 'ใช่' : 'ไม่ใช่',
+                    record.traveling ? 'ใช่' : 'ไม่ใช่',
+                    csvCell(record.timestamp ? new Date(record.timestamp).toLocaleString('th-TH') : '')
+                ].join(',') + "\n";
             });
 
-            const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const blob = new Blob(["﻿" + csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `checkin_records_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
+            link.href = URL.createObjectURL(blob);
+            link.download = `checkin_records_${suffix}.csv`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
         }
     </script>
 
