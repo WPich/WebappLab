@@ -257,6 +257,103 @@
             margin-top: 5px;
         }
 
+        /* ---------- ตัวเลือกพนักงานแบบหลายคน ---------- */
+        .pick-count {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 10px;
+            border-radius: 12px;
+            background: #e0e0e0;
+            color: #555;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+        .pick-count.active { background: #4CAF50; color: white; }
+
+        .picker-tools { display: flex; gap: 10px; margin-bottom: 10px; }
+        .form-group .picker-tools input { flex: 1; }
+
+        .mini-btn {
+            padding: 6px 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+        .mini-btn:hover { background: #f0f0f0; }
+
+        .picker {
+            max-height: 340px;
+            overflow-y: auto;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+        }
+        .picker-group-head {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f1f3f9;
+            color: #4a4f8a;
+            font-weight: 700;
+            font-size: 0.9em;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .picker-group-head .mini-btn { padding: 3px 10px; font-size: 0.8em; }
+        .picker-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        }
+        .form-group .picker label.pick-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+            padding: 8px 12px;
+            font-weight: 400;
+            font-size: 0.95em;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f3f3;
+        }
+        .form-group .picker label.pick-item:hover { background: #f7fbf7; }
+        .form-group .picker label.pick-item.checked { background: #e8f5e9; }
+        .form-group .picker input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            flex-shrink: 0;
+            accent-color: #4CAF50;
+        }
+        .pick-name { display: block; color: #333; }
+        .pick-pos { display: block; color: #888; font-size: 0.8em; }
+        .picker .hidden { display: none !important; }
+
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 6px 4px 12px;
+            border-radius: 16px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            font-size: 0.85em;
+        }
+        .chip button {
+            border: none;
+            background: none;
+            color: #2e7d32;
+            cursor: pointer;
+            font-size: 1.1em;
+            line-height: 1;
+        }
+
         @media (max-width: 600px) {
             .checkbox-group {
                 flex-direction: column;
@@ -284,10 +381,13 @@
             <h2>บันทึกการ Check In</h2>
             <form id="checkinForm">
                 <div class="form-group">
-                    <label for="employeeName">ชื่อพนักงาน:</label>
-                    <select id="employeeName" required>
-                        <option value="">เลือกชื่อพนักงาน</option>
-                    </select>
+                    <label>ชื่อพนักงาน: <span id="pickCount" class="pick-count">ยังไม่ได้เลือก</span></label>
+                    <div class="picker-tools">
+                        <input type="search" id="pickSearch" placeholder="🔍 ค้นหาชื่อ / ชื่อเล่น / ตำแหน่ง" autocomplete="off">
+                        <button type="button" id="pickClear" class="mini-btn">ล้างที่เลือก</button>
+                    </div>
+                    <div id="employeePicker" class="picker"></div>
+                    <div id="pickChips" class="chips"></div>
                 </div>
 
                 <div class="form-group">
@@ -467,19 +567,109 @@
             return hit ? hit.label : cleaned;
         }
 
-        function populateEmployeeSelect() {
-            const select = document.getElementById('employeeName');
+        // ---------------- ตัวเลือกพนักงาน (เลือกได้หลายคน) ----------------
+        function buildEmployeePicker() {
+            const picker = document.getElementById('employeePicker');
             const groups = {};
             EMPLOYEES.forEach(e => {
                 if (!groups[e.group]) {
-                    groups[e.group] = document.createElement('optgroup');
-                    groups[e.group].label = e.group;
-                    select.appendChild(groups[e.group]);
+                    const wrap = document.createElement('div');
+                    wrap.className = 'picker-group';
+                    wrap.innerHTML = `<div class="picker-group-head"><span>${escapeHtml(e.group)}</span>` +
+                        `<button type="button" class="mini-btn" data-group-toggle>เลือกทั้งกลุ่ม</button></div>` +
+                        `<div class="picker-items"></div>`;
+                    picker.appendChild(wrap);
+                    groups[e.group] = wrap.querySelector('.picker-items');
                 }
-                const opt = document.createElement('option');
-                opt.value = e.label;
-                opt.textContent = e.position ? `${e.label} – ${e.position}` : e.label;
-                groups[e.group].appendChild(opt);
+                groups[e.group].appendChild(makePickItem(e.label, e.position));
+            });
+
+            picker.addEventListener('change', e => {
+                if (e.target.type !== 'checkbox') return;
+                // โหมดแก้ไข: แก้ได้ทีละ 1 record = 1 คน
+                if (editingDocId && e.target.checked) {
+                    getPickBoxes().forEach(b => { if (b !== e.target) b.checked = false; });
+                }
+                refreshPicker();
+            });
+
+            picker.addEventListener('click', e => {
+                const btn = e.target.closest('[data-group-toggle]');
+                if (!btn || editingDocId) return;
+                const boxes = [...btn.closest('.picker-group').querySelectorAll('.pick-item:not(.hidden) input')];
+                const allOn = boxes.length && boxes.every(b => b.checked);
+                boxes.forEach(b => { b.checked = !allOn; });
+                refreshPicker();
+            });
+
+            document.getElementById('pickSearch').addEventListener('input', e => {
+                const q = e.target.value.trim().toLowerCase();
+                picker.querySelectorAll('.pick-item').forEach(item => {
+                    item.classList.toggle('hidden', q !== '' && !item.dataset.search.includes(q));
+                });
+                picker.querySelectorAll('.picker-group').forEach(g => {
+                    g.classList.toggle('hidden', !g.querySelector('.pick-item:not(.hidden)'));
+                });
+            });
+
+            document.getElementById('pickClear').addEventListener('click', () => {
+                getPickBoxes().forEach(b => { b.checked = false; });
+                refreshPicker();
+            });
+
+            document.getElementById('pickChips').addEventListener('click', e => {
+                const btn = e.target.closest('button[data-name]');
+                if (!btn) return;
+                const box = getPickBoxes().find(b => b.value === btn.dataset.name);
+                if (box) box.checked = false;
+                refreshPicker();
+            });
+
+            refreshPicker();
+        }
+
+        function makePickItem(name, position, legacy = false) {
+            const item = document.createElement('label');
+            item.className = 'pick-item' + (legacy ? ' legacy' : '');
+            item.dataset.search = `${name} ${position || ''}`.toLowerCase();
+            const box = document.createElement('input');
+            box.type = 'checkbox';
+            box.value = name;
+            const text = document.createElement('span');
+            text.innerHTML = `<span class="pick-name">${escapeHtml(name)}</span>` +
+                (position ? `<span class="pick-pos">${escapeHtml(position)}</span>` : '');
+            item.append(box, text);
+            return item;
+        }
+
+        function getPickBoxes() {
+            return [...document.querySelectorAll('#employeePicker input[type="checkbox"]')];
+        }
+
+        function getSelectedEmployees() {
+            return getPickBoxes().filter(b => b.checked).map(b => b.value);
+        }
+
+        function setSelectedEmployees(names) {
+            getPickBoxes().forEach(b => { b.checked = names.includes(b.value); });
+            refreshPicker();
+        }
+
+        function refreshPicker() {
+            const selected = getSelectedEmployees();
+            getPickBoxes().forEach(b => b.closest('.pick-item').classList.toggle('checked', b.checked));
+
+            const count = document.getElementById('pickCount');
+            count.textContent = selected.length ? `เลือกแล้ว ${selected.length} คน` : 'ยังไม่ได้เลือก';
+            count.classList.toggle('active', selected.length > 0);
+
+            document.getElementById('pickChips').innerHTML = selected.map(n =>
+                `<span class="chip">${escapeHtml(n)}<button type="button" data-name="${escapeHtml(n)}" title="เอาออก">×</button></span>`).join('');
+
+            document.querySelectorAll('#employeePicker [data-group-toggle]').forEach(btn => {
+                const boxes = [...btn.closest('.picker-group').querySelectorAll('input[type="checkbox"]')];
+                btn.textContent = boxes.every(b => b.checked) ? 'ไม่เลือกทั้งกลุ่ม' : 'เลือกทั้งกลุ่ม';
+                btn.disabled = !!editingDocId;
             });
         }
 
@@ -513,7 +703,7 @@
         // 4. DATA HANDLING (การจัดการข้อมูล)
         // =====================================================================
         window.addEventListener('load', function() {
-            populateEmployeeSelect();
+            buildEmployeePicker();
             setToday('checkinDate');
 
             checkinCollection.orderBy('checkinDate', 'desc').onSnapshot(snapshot => {
@@ -529,33 +719,67 @@
             e.preventDefault();
             const submitBtn = document.querySelector('.btn-primary');
 
-            const employeeName = document.getElementById('employeeName').value;
+            const selected = getSelectedEmployees();
             const checkinDate = document.getElementById('checkinDate').value;
             const manday = document.getElementById('manday').checked;
             const traveling = document.getElementById('traveling').checked;
 
+            if (selected.length === 0) return alert('กรุณาเลือกพนักงานอย่างน้อย 1 คน');
+            if (!checkinDate) return alert('กรุณาเลือกวันที่');
             if (!manday && !traveling) {
                 return alert('กรุณาเลือกอย่างน้อย 1 ประเภท (Manday หรือ Traveling)');
             }
+            if (editingDocId && selected.length !== 1) {
+                return alert('โหมดแก้ไข แก้ได้ทีละ 1 คน');
+            }
 
-            // กันบันทึกซ้ำ: คนเดียวกัน วันเดียวกัน
-            const duplicate = localCheckinRecords.find(r =>
-                r.id !== editingDocId && r.checkinDate === checkinDate && normalizeName(r.employeeName) === employeeName);
-            if (duplicate && !confirm(`${employeeName} มีการ Check In วันที่ ${formatThaiDate(checkinDate)} แล้ว\nต้องการบันทึกซ้ำหรือไม่?`)) {
+            const timestamp = new Date().toISOString();
+
+            // ---------- โหมดแก้ไข (1 record) ----------
+            if (editingDocId) {
+                const employeeName = selected[0];
+                const dup = localCheckinRecords.some(r =>
+                    r.id !== editingDocId && r.checkinDate === checkinDate && normalizeName(r.employeeName) === employeeName);
+                if (dup && !confirm(`${employeeName} มีการ Check In วันที่ ${formatThaiDate(checkinDate)} อยู่แล้ว\nต้องการบันทึกซ้ำหรือไม่?`)) return;
+
+                submitBtn.disabled = true;
+                try {
+                    await checkinCollection.doc(editingDocId).update({ employeeName, checkinDate, manday, traveling, timestamp });
+                    alert('อัพเดทข้อมูลเรียบร้อยแล้ว!');
+                    clearForm();
+                } catch (error) {
+                    console.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล: ", error);
+                    alert("เกิดข้อผิดพลาด: " + error.message);
+                } finally {
+                    submitBtn.disabled = false;
+                }
                 return;
             }
 
-            const record = { employeeName, checkinDate, manday, traveling, timestamp: new Date().toISOString() };
+            // ---------- บันทึกใหม่ (หลายคนพร้อมกัน) ----------
+            // กันบันทึกซ้ำ: คนที่มี record วันเดียวกันอยู่แล้วจะถูกข้าม
+            const already = selected.filter(name =>
+                localCheckinRecords.some(r => r.checkinDate === checkinDate && normalizeName(r.employeeName) === name));
+            let toSave = selected;
+            if (already.length) {
+                const remaining = selected.filter(n => !already.includes(n));
+                const msg = `มีการ Check In วันที่ ${formatThaiDate(checkinDate)} อยู่แล้ว:\n• ${already.join('\n• ')}`;
+                if (remaining.length === 0) {
+                    if (!confirm(`${msg}\n\nทุกคนที่เลือกมีข้อมูลวันนี้แล้ว ต้องการบันทึกซ้ำหรือไม่?`)) return;
+                } else {
+                    if (!confirm(`${msg}\n\nกด OK = ข้ามคนเหล่านี้ บันทึกเฉพาะอีก ${remaining.length} คน\nกด Cancel = ยกเลิก`)) return;
+                    toSave = remaining;
+                }
+            }
 
             submitBtn.disabled = true;
             try {
-                if (editingDocId) {
-                    await checkinCollection.doc(editingDocId).update(record);
-                    alert('อัพเดทข้อมูลเรียบร้อยแล้ว!');
-                } else {
-                    await checkinCollection.add(record);
-                    alert('บันทึกข้อมูลเรียบร้อยแล้ว!');
-                }
+                const batch = db.batch();
+                toSave.forEach(employeeName => {
+                    batch.set(checkinCollection.doc(), { employeeName, checkinDate, manday, traveling, timestamp });
+                });
+                await batch.commit();
+                alert(`บันทึกข้อมูลเรียบร้อยแล้ว ${toSave.length} คน!`);
                 clearForm();
             } catch (error) {
                 console.error("เกิดข้อผิดพลาดในการบันทึกข้อมูล: ", error);
@@ -569,7 +793,10 @@
             document.getElementById('checkinForm').reset();
             setToday('checkinDate');
             editingDocId = null;
+            document.querySelectorAll('#employeePicker .pick-item.legacy').forEach(el => el.remove());
+            document.getElementById('pickSearch').dispatchEvent(new Event('input'));
             document.querySelector('.btn-primary').textContent = 'บันทึกข้อมูล';
+            refreshPicker();
         }
 
         function updateRecordsTable() {
@@ -603,21 +830,21 @@
             const record = localCheckinRecords.find(r => r.id === docId);
             if (!record) return alert('ไม่พบข้อมูลที่ต้องการแก้ไข!');
 
-            const select = document.getElementById('employeeName');
             const name = normalizeName(record.employeeName);
+            editingDocId = docId;
             // ถ้าเป็นชื่อเก่าที่ไม่อยู่ในรายชื่อแล้ว ให้เพิ่มเป็นตัวเลือกชั่วคราว
-            if (![...select.options].some(o => o.value === name)) {
-                const opt = document.createElement('option');
-                opt.value = name;
-                opt.textContent = `${name} (รายชื่อเดิม)`;
-                select.appendChild(opt);
+            if (!getPickBoxes().some(b => b.value === name)) {
+                const firstItems = document.querySelector('#employeePicker .picker-items');
+                firstItems.prepend(makePickItem(name, 'รายชื่อเดิม', true));
             }
-            select.value = name;
+            const search = document.getElementById('pickSearch');
+            search.value = '';
+            search.dispatchEvent(new Event('input'));
+            setSelectedEmployees([name]);
             document.getElementById('checkinDate').value = record.checkinDate;
             document.getElementById('manday').checked = !!record.manday;
             document.getElementById('traveling').checked = !!record.traveling;
 
-            editingDocId = docId;
             document.querySelector('.btn-primary').textContent = 'อัพเดทข้อมูล';
             document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
         }
