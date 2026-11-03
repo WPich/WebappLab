@@ -224,8 +224,8 @@
             border-radius: 6px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 2fr repeat(5, 1fr);
+            gap: 8px;
             align-items: center;
             font-size: 0.9em;
         }
@@ -245,6 +245,28 @@
         .stat-checkin { background: #e3f2fd; color: #1976d2; }
         .stat-manday { background: #e8f5e8; color: #4caf50; }
         .stat-travel { background: #fff3e0; color: #ff9800; }
+        .stat-self { background: #fce4ec; color: #c2185b; }
+        .stat-grab { background: #e0f2f1; color: #00897b; }
+
+        .travel-options {
+            margin-top: 12px;
+            padding: 12px 15px;
+            border-left: 4px solid #FF9800;
+            background: #fff8ee;
+            border-radius: 8px;
+        }
+        .travel-options .hint { font-size: 0.85em; color: #8a6d3b; margin-bottom: 8px; }
+        .travel-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            margin: 1px 0;
+            border-radius: 10px;
+            font-size: 0.85em;
+            white-space: nowrap;
+        }
+        .travel-badge.self { background: #fce4ec; color: #c2185b; }
+        .travel-badge.grab { background: #e0f2f1; color: #00897b; }
+        .travel-badge.unknown { background: #f0f0f0; color: #777; }
 
         .summary-number {
             font-size: 2em;
@@ -355,6 +377,7 @@
         }
 
         @media (max-width: 600px) {
+            .employee-card { font-size: 0.75em; gap: 4px; padding: 8px; }
             .checkbox-group {
                 flex-direction: column;
                 gap: 15px;
@@ -407,6 +430,19 @@
                             <label for="traveling">Traveling</label>
                         </div>
                     </div>
+                    <div id="travelOptions" class="travel-options" style="display: none;">
+                        <div class="hint">การเดินทาง (เลือกได้ทั้งสองแบบ ถ้าวันนั้นใช้ทั้งคู่)</div>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="travelSelf">
+                                <label for="travelSelf">🧾 แยกเบิกเอง</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="travelGrab">
+                                <label for="travelGrab">🚗 ใช้ Grab บริษัท</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="button-group">
@@ -435,6 +471,14 @@
                     <div class="summary-card">
                         <div class="summary-number" id="totalTraveling">0</div>
                         <div class="summary-label">Traveling</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-number" id="totalTravelSelf" style="color: #c2185b;">0</div>
+                        <div class="summary-label">🧾 เบิกเอง</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-number" id="totalTravelGrab" style="color: #00897b;">0</div>
+                        <div class="summary-label">🚗 Grab บริษัท</div>
                     </div>
                 </div>
             </div>
@@ -468,6 +512,14 @@
                     <div class="summary-card">
                         <div class="summary-number" id="rangeTraveling">0</div>
                         <div class="summary-label">Traveling รวม</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-number" id="rangeTravelSelf" style="color: #c2185b;">0</div>
+                        <div class="summary-label">🧾 เบิกเอง</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-number" id="rangeTravelGrab" style="color: #00897b;">0</div>
+                        <div class="summary-label">🚗 Grab บริษัท</div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-number" id="rangeDays">0</div>
@@ -699,6 +751,35 @@
             document.getElementById(inputId).value = toYmd(new Date());
         }
 
+        // ---------------- การเดินทาง: เบิกเอง / Grab บริษัท ----------------
+        // record เก่าที่มี traveling = true แต่ไม่มี travelSelf/travelGrab จะนับเป็น "ไม่ระบุ"
+        function travelBadges(r) {
+            if (!r.traveling) return '❌';
+            const out = [];
+            if (r.travelSelf) out.push('<span class="travel-badge self">🧾 เบิกเอง</span>');
+            if (r.travelGrab) out.push('<span class="travel-badge grab">🚗 Grab</span>');
+            if (!out.length) out.push('<span class="travel-badge unknown">✅ ไม่ระบุ</span>');
+            return out.join(' ');
+        }
+
+        function countTravel(records) {
+            return {
+                traveling: records.filter(r => r.traveling).length,
+                self: records.filter(r => r.traveling && r.travelSelf).length,
+                grab: records.filter(r => r.traveling && r.travelGrab).length
+            };
+        }
+
+        function syncTravelOptions() {
+            const on = document.getElementById('traveling').checked;
+            document.getElementById('travelOptions').style.display = on ? 'block' : 'none';
+            if (!on) {
+                document.getElementById('travelSelf').checked = false;
+                document.getElementById('travelGrab').checked = false;
+            }
+        }
+        document.getElementById('traveling').addEventListener('change', syncTravelOptions);
+
         // =====================================================================
         // 4. DATA HANDLING (การจัดการข้อมูล)
         // =====================================================================
@@ -723,11 +804,16 @@
             const checkinDate = document.getElementById('checkinDate').value;
             const manday = document.getElementById('manday').checked;
             const traveling = document.getElementById('traveling').checked;
+            const travelSelf = traveling && document.getElementById('travelSelf').checked;
+            const travelGrab = traveling && document.getElementById('travelGrab').checked;
 
             if (selected.length === 0) return alert('กรุณาเลือกพนักงานอย่างน้อย 1 คน');
             if (!checkinDate) return alert('กรุณาเลือกวันที่');
             if (!manday && !traveling) {
                 return alert('กรุณาเลือกอย่างน้อย 1 ประเภท (Manday หรือ Traveling)');
+            }
+            if (traveling && !travelSelf && !travelGrab) {
+                return alert('กรุณาเลือกการเดินทาง: แยกเบิกเอง หรือ ใช้ Grab บริษัท');
             }
             if (editingDocId && selected.length !== 1) {
                 return alert('โหมดแก้ไข แก้ได้ทีละ 1 คน');
@@ -744,7 +830,7 @@
 
                 submitBtn.disabled = true;
                 try {
-                    await checkinCollection.doc(editingDocId).update({ employeeName, checkinDate, manday, traveling, timestamp });
+                    await checkinCollection.doc(editingDocId).update({ employeeName, checkinDate, manday, traveling, travelSelf, travelGrab, timestamp });
                     alert('อัพเดทข้อมูลเรียบร้อยแล้ว!');
                     clearForm();
                 } catch (error) {
@@ -776,7 +862,7 @@
             try {
                 const batch = db.batch();
                 toSave.forEach(employeeName => {
-                    batch.set(checkinCollection.doc(), { employeeName, checkinDate, manday, traveling, timestamp });
+                    batch.set(checkinCollection.doc(), { employeeName, checkinDate, manday, traveling, travelSelf, travelGrab, timestamp });
                 });
                 await batch.commit();
                 alert(`บันทึกข้อมูลเรียบร้อยแล้ว ${toSave.length} คน!`);
@@ -793,6 +879,7 @@
             document.getElementById('checkinForm').reset();
             setToday('checkinDate');
             editingDocId = null;
+            syncTravelOptions();
             document.querySelectorAll('#employeePicker .pick-item.legacy').forEach(el => el.remove());
             document.getElementById('pickSearch').dispatchEvent(new Event('input'));
             document.querySelector('.btn-primary').textContent = 'บันทึกข้อมูล';
@@ -810,7 +897,7 @@
                     <td>${escapeHtml(normalizeName(record.employeeName))}</td>
                     <td>${formatThaiDate(record.checkinDate)}</td>
                     <td>${record.manday ? '✅' : '❌'}</td>
-                    <td>${record.traveling ? '✅' : '❌'}</td>
+                    <td>${travelBadges(record)}</td>
                     <td>${record.timestamp ? escapeHtml(new Date(record.timestamp).toLocaleString('th-TH')) : '-'}</td>
                     <td>
                         <button class="edit-btn" data-id="${escapeHtml(record.id)}" data-action="edit">แก้ไข</button>
@@ -844,6 +931,9 @@
             document.getElementById('checkinDate').value = record.checkinDate;
             document.getElementById('manday').checked = !!record.manday;
             document.getElementById('traveling').checked = !!record.traveling;
+            syncTravelOptions();
+            document.getElementById('travelSelf').checked = !!record.travelSelf;
+            document.getElementById('travelGrab').checked = !!record.travelGrab;
 
             document.querySelector('.btn-primary').textContent = 'อัพเดทข้อมูล';
             document.querySelector('.form-section').scrollIntoView({ behavior: 'smooth' });
@@ -877,7 +967,10 @@
             document.querySelector('#summarySection .summary-title').textContent = `สรุปข้อมูลวันที่ ${formatThaiDate(selectedDate)}`;
             document.getElementById('totalCheckins').textContent = dateRecords.length;
             document.getElementById('totalMandays').textContent = dateRecords.filter(r => r.manday).length;
-            document.getElementById('totalTraveling').textContent = dateRecords.filter(r => r.traveling).length;
+            const t = countTravel(dateRecords);
+            document.getElementById('totalTraveling').textContent = t.traveling;
+            document.getElementById('totalTravelSelf').textContent = t.self;
+            document.getElementById('totalTravelGrab').textContent = t.grab;
 
             document.getElementById('rangeSummarySection').style.display = 'none';
             summarySection.style.display = 'block';
@@ -914,7 +1007,10 @@
 
             document.getElementById('rangeCheckins').textContent = records.length;
             document.getElementById('rangeMandays').textContent = records.filter(r => r.manday).length;
-            document.getElementById('rangeTraveling').textContent = records.filter(r => r.traveling).length;
+            const t = countTravel(records);
+            document.getElementById('rangeTraveling').textContent = t.traveling;
+            document.getElementById('rangeTravelSelf').textContent = t.self;
+            document.getElementById('rangeTravelGrab').textContent = t.grab;
             const [y1, m1, d1] = startDate.split('-').map(Number);
             const [y2, m2, d2] = endDate.split('-').map(Number);
             const daysDiff = Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86400000) + 1;
@@ -928,10 +1024,12 @@
             const employeeStats = {};
             rangeRecords.forEach(record => {
                 const name = normalizeName(record.employeeName);
-                if (!employeeStats[name]) employeeStats[name] = { checkins: 0, mandays: 0, traveling: 0 };
+                if (!employeeStats[name]) employeeStats[name] = { checkins: 0, mandays: 0, traveling: 0, self: 0, grab: 0 };
                 employeeStats[name].checkins++;
                 if (record.manday) employeeStats[name].mandays++;
                 if (record.traveling) employeeStats[name].traveling++;
+                if (record.traveling && record.travelSelf) employeeStats[name].self++;
+                if (record.traveling && record.travelGrab) employeeStats[name].grab++;
             });
 
             if (Object.keys(employeeStats).length === 0) {
@@ -941,11 +1039,11 @@
 
             // เรียงตามลำดับในรายชื่อ ชื่อที่ไม่อยู่ในรายชื่อไว้ท้ายสุด
             const order = name => { const i = EMPLOYEES.findIndex(e => e.label === name); return i < 0 ? 999 : i; };
-            let html = `<div class="employee-card" style="background: linear-gradient(45deg, #9C27B0, #673AB7); color: white;"><div class="employee-name" style="color: white;">ชื่อพนักงาน</div><div style="text-align: center; font-weight: bold;">Check In</div><div style="text-align: center; font-weight: bold;">Manday</div><div style="text-align: center; font-weight: bold;">Traveling</div></div>`;
+            let html = `<div class="employee-card" style="background: linear-gradient(45deg, #9C27B0, #673AB7); color: white;"><div class="employee-name" style="color: white;">ชื่อพนักงาน</div><div style="text-align: center; font-weight: bold;">Check In</div><div style="text-align: center; font-weight: bold;">Manday</div><div style="text-align: center; font-weight: bold;">Traveling</div><div style="text-align: center; font-weight: bold;">🧾 เบิกเอง</div><div style="text-align: center; font-weight: bold;">🚗 Grab</div></div>`;
             Object.entries(employeeStats)
                 .sort(([a], [b]) => order(a) - order(b) || a.localeCompare(b, 'th'))
                 .forEach(([name, stats]) => {
-                    html += `<div class="employee-card"><div class="employee-name">${escapeHtml(name)}</div><div class="employee-stat stat-checkin">${stats.checkins}</div><div class="employee-stat stat-manday">${stats.mandays}</div><div class="employee-stat stat-travel">${stats.traveling}</div></div>`;
+                    html += `<div class="employee-card"><div class="employee-name">${escapeHtml(name)}</div><div class="employee-stat stat-checkin">${stats.checkins}</div><div class="employee-stat stat-manday">${stats.mandays}</div><div class="employee-stat stat-travel">${stats.traveling}</div><div class="employee-stat stat-self">${stats.self}</div><div class="employee-stat stat-grab">${stats.grab}</div></div>`;
                 });
             employeeBreakdownContent.innerHTML = html;
         }
@@ -964,13 +1062,15 @@
             }
             if (records.length === 0) return alert('ไม่มีข้อมูลสำหรับ Export');
 
-            let csvContent = "ชื่อพนักงาน,วันที่,Manday,Traveling,เวลาบันทึก\n";
+            let csvContent = "ชื่อพนักงาน,วันที่,Manday,Traveling,เบิกเอง,Grab บริษัท,เวลาบันทึก\n";
             [...records].sort((a, b) => (a.checkinDate || '').localeCompare(b.checkinDate || '')).forEach(record => {
                 csvContent += [
                     csvCell(normalizeName(record.employeeName)),
                     csvCell(formatThaiDate(record.checkinDate, { year: 'numeric', month: '2-digit', day: '2-digit' })),
                     record.manday ? 'ใช่' : 'ไม่ใช่',
                     record.traveling ? 'ใช่' : 'ไม่ใช่',
+                    record.traveling ? (record.travelSelf ? 'ใช่' : (record.travelGrab ? 'ไม่ใช่' : 'ไม่ระบุ')) : '',
+                    record.traveling ? (record.travelGrab ? 'ใช่' : (record.travelSelf ? 'ไม่ใช่' : 'ไม่ระบุ')) : '',
                     csvCell(record.timestamp ? new Date(record.timestamp).toLocaleString('th-TH') : '')
                 ].join(',') + "\n";
             });
